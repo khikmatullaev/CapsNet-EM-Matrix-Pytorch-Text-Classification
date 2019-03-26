@@ -119,7 +119,7 @@ def main():
     databases = ['CR', 'IMDB2', 'MR', 'SST-1', 'SST-2', 'SUBJ', 'TREC']
 
     em_type = 'glove'
-    database = 'IMDB'
+    database = 'MR'
 
     if not os.path.exists(database):
         os.makedirs(database)
@@ -132,7 +132,7 @@ def main():
         torch.cuda.manual_seed(seed)
 
     # Load data
-    train_loader, test_loader, num_class = load_dataset(database, em_type, folder='./glove300')
+    train_loader, test_loader, num_class = load_dataset(database, em_type)
 
     #for batch_idx, (data, target) in enumerate(train_loader):
         # samples will be a 64 x D dimensional tensor
