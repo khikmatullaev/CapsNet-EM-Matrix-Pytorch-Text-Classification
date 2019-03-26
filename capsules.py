@@ -346,7 +346,7 @@ class CapsNet(nn.Module):
         x = self.relu1(x)
         x = self.primary_caps(x)
         x = self.conv_caps1(x)
-        x = self.conv_caps2(x) 
+        x = self.conv_caps2(x)
         x = self.class_caps(x)
         return x
 

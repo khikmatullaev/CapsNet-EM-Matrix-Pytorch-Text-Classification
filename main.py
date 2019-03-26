@@ -14,7 +14,8 @@ def accuracy(output, target, topk=(1,)):
 
     _, pred = output.topk(maxk, 1, True, True)
     pred = pred.t()
-    correct = pred.eq(target.view(1, -1).expand_as(pred))
+
+    correct = pred.eq(target.view(1, -1).expand_as(pred).type(torch.cuda.LongTensor))
 
     res = []
     for k in topk:
@@ -67,7 +68,8 @@ def train(train_loader, model, criterion, optimizer, epoch, device):
         data, target = data.to(device), target.to(device)
         optimizer.zero_grad()
         output = model(data)
-        r = (1. * batch_idx + (epoch - 1) * train_len) / (args.epochs * train_len)
+
+        r = (1. * batch_idx + (epoch - 1) * train_len) / (32 * train_len)
         loss = criterion(output, target, r)
         acc = accuracy(output, target)
         loss.backward()
@@ -77,15 +79,20 @@ def train(train_loader, model, criterion, optimizer, epoch, device):
         end = time.time()
 
         epoch_acc += acc[0].item()
-        if batch_idx % args.log_interval == 0:
+        if batch_idx:
             print('Train Epoch: {}\t[{}/{} ({:.0f}%)]\t'
                   'Loss: {:.6f}\tAccuracy: {:.6f}\t'
                   'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
                   'Data {data_time.val:.3f} ({data_time.avg:.3f})'.format(
-                epoch, batch_idx * len(data), len(train_loader.dataset),
-                       100. * batch_idx / len(train_loader),
-                loss.item(), acc[0].item(),
-                batch_time=batch_time, data_time=data_time))
+                epoch,
+                batch_idx * len(data),
+                len(train_loader.dataset),
+                100. * batch_idx / len(train_loader),loss.item(),
+                acc[0].item(),
+                batch_time=batch_time,
+                data_time=data_time)
+            )
+
     return epoch_acc
 
 
@@ -103,8 +110,7 @@ def test(test_loader, model, criterion, device):
 
     test_loss /= test_len
     acc /= test_len
-    print('\nTest set: Average loss: {:.6f}, Accuracy: {:.6f} \n'.format(
-        test_loss, acc))
+    print('\nTest set: Average loss: {:.6f}, Accuracy: {:.6f} \n'.format(test_loss, acc))
     return acc
 
 
@@ -113,7 +119,7 @@ def main():
     databases = ['CR', 'IMDB2', 'MR', 'SST-1', 'SST-2', 'SUBJ', 'TREC']
 
     em_type = 'glove'
-    database = 'MR'
+    database = 'IMDB'
 
     if not os.path.exists(database):
         os.makedirs(database)
@@ -126,17 +132,18 @@ def main():
         torch.cuda.manual_seed(seed)
 
     # Load data
-    train_loader, test_loader, num_class = load_dataset(database, em_type)
+    train_loader, test_loader, num_class = load_dataset(database, em_type, folder='./glove300')
 
-    for batch_idx, samples in enumerate(train_loader):
+    #for batch_idx, (data, target) in enumerate(train_loader):
+        # samples will be a 64 x D dimensional tensor
         # samples will be a 64 x D dimensional tensor
         # feed it to your neural network model
-        print(samples[0].shape)
-        print(samples[1].shape)
-        break
+        #print(data.shape)
+        #print(target.shape)
+        #break
 
     A, B, C, D = 64, 8, 16, 16
-    # A, B, C, D = 32, 32, 32, 32
+    #A, B, C, D = 32, 32, 32, 32
     model = capsules(A=A, B=B, C=C, D=D, E=num_class, iters=2).to(device)
 
     criterion = SpreadLoss(num_class=num_class, m_min=0.2, m_max=0.9)
@@ -145,6 +152,7 @@ def main():
 
     epochs = 10
     for epoch in range(1, epochs + 1):
+        torch.cuda.empty_cache()
         acc = train(train_loader, model, criterion, optimizer, epoch, device)
         acc /= len(train_loader)
         scheduler.step(acc)
@@ -153,6 +161,7 @@ def main():
     print('best test accuracy: {:.6f}'.format(best_acc))
 
     snapshot(model, database, epochs)
+
 
 if __name__ == '__main__':
     main()
