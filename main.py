@@ -1,6 +1,9 @@
 import time
 import os
 import torch.optim as optim
+import matplotlib.pyplot as plt
+from matplotlib.ticker import MaxNLocator
+import pandas as pd
 
 from data_helpers import load_dataset
 from capsules import *
@@ -59,6 +62,8 @@ def train(train_loader, model, criterion, optimizer, epoch, device):
 
     model.train()
     train_len = len(train_loader)
+
+    epoch_loss = 0
     epoch_acc = 0
     end = time.time()
 
@@ -78,45 +83,74 @@ def train(train_loader, model, criterion, optimizer, epoch, device):
         batch_time.update(time.time() - end)
         end = time.time()
 
+        epoch_loss += loss.item()
         epoch_acc += acc[0].item()
+
         if batch_idx:
             print('Train Epoch: {}\t[{}/{} ({:.0f}%)]\t'
-                  'Loss: {:.6f}\tAccuracy: {:.6f}\t'
+                  'Accuracy: {:.6f}\tLoss: {:.6f}\t'
                   'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
                   'Data {data_time.val:.3f} ({data_time.avg:.3f})'.format(
                 epoch,
                 batch_idx * len(data),
                 len(train_loader.dataset),
-                100. * batch_idx / len(train_loader),loss.item(),
+                100. * batch_idx / len(train_loader),
                 acc[0].item(),
+                loss.item(),
                 batch_time=batch_time,
                 data_time=data_time)
             )
 
-    return epoch_acc
+    epoch_acc /= train_len
+    epoch_loss /= train_len
+
+    return epoch_acc, epoch_loss
 
 
-def test(test_loader, model, criterion, device):
+def test(test_loader, model, criterion, phase, device):
     model.eval()
-    test_loss = 0
+
+    loss = 0
     acc = 0
     test_len = len(test_loader)
+
     with torch.no_grad():
         for data, target in test_loader:
             data, target = data.to(device), target.to(device)
             output = model(data)
-            test_loss += criterion(output, target, r=1).item()
+            loss += criterion(output, target, r=1).item()
             acc += accuracy(output, target)[0].item()
 
-    test_loss /= test_len
+    loss /= test_len
     acc /= test_len
-    print('\nTest set: Average loss: {:.6f}, Accuracy: {:.6f} \n'.format(test_loss, acc))
-    return acc
 
+    print('\n{} set: Average Accuracy: {:.6f}, Loss: {:.6f} \n'.format(phase, acc, loss))
+    return acc, loss
+
+
+def save_plot_to_file(file_name, type, out_name, epochs):
+    df = pd.read_csv(file_name)
+
+    df_train = df[df['phase'] == 'train']
+    df_dev = df[df['phase'] == 'dev']
+
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    ax.xaxis.set_major_locator(MaxNLocator(integer=True, steps=[epochs]))
+
+    plt.xlabel('epoch')
+    plt.ylabel(type)
+
+    plt.plot(df_train['epoch'], df_train[type], label='train')
+    plt.plot(df_dev['epoch'], df_dev[type], label='dev')
+    plt.legend()
+
+    plt.savefig(out_name)
 
 def main():
     em_type = 'glove'
-    database = 'MR'
+    database = 'IMDB'
+    folder = database
 
     if not os.path.exists(database):
         os.makedirs(database)
@@ -129,25 +163,58 @@ def main():
         torch.cuda.manual_seed(seed)
 
     # Load data
-    train_loader, test_loader, num_class = load_dataset(database, em_type)
+    train_loader, dev_loader, test_loader, num_class = load_dataset(database, 64, em_type)
 
     A, B, C, D = 64, 8, 16, 16
     #A, B, C, D = 32, 32, 32, 32
     model = capsules(A=A, B=B, C=C, D=D, E=num_class, iters=2).to(device)
 
+    # Save the model to the file
+    model_file = open(folder + "/model.txt", "w")
+    model_file.write('Model:\n{}\n'.format(model))
+    model_file.write('Total number of parameters:{}\n'.format(sum(p.numel() for p in model.parameters())))
+    model_file.write('Total number of trainable parameters:{}\n'.format(sum(p.numel() for p in model.parameters() if p.requires_grad)))
+    model_file.close()
+
     criterion = SpreadLoss(num_class=num_class, m_min=0.2, m_max=0.9)
     optimizer = optim.Adam(model.parameters(), lr=0.01, weight_decay=0)
     scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'max', patience=1)
 
-    epochs = 10
+    out_acc = open(folder + "/acc.csv", "w")
+    out_loss = open(folder + "/loss.csv", "w")
+
+    out_acc.write('epoch,phase,acc\n')
+    out_loss.write('epoch,phase,loss\n')
+
+    epochs = 2
     for epoch in range(1, epochs + 1):
         torch.cuda.empty_cache()
-        acc = train(train_loader, model, criterion, optimizer, epoch, device)
-        acc /= len(train_loader)
-        scheduler.step(acc)
 
-    best_acc = test(test_loader, model, criterion, device)
-    print('best test accuracy: {:.6f}'.format(best_acc))
+        print('Epoch {}/{}'.format(epoch, epochs))
+        print('-' * 30)
+
+        train_acc, train_loss = train(train_loader, model, criterion, optimizer, epoch, device)
+
+        out_acc.write('{},{},{:.4f}\n'.format(epoch, 'train', train_acc))
+        out_loss.write('{},{},{:.4f}\n'.format(epoch, 'train', train_loss))
+
+        dev_acc, dev_loss = test(test_loader, model, criterion, 'dev', device)
+
+        out_acc.write('{},{},{:.4f}\n'.format(epoch, 'dev', dev_acc))
+        out_loss.write('{},{},{:.4f}\n'.format(epoch, 'dev', dev_loss))
+
+        scheduler.step(train_acc)
+
+    out_acc.close()
+    out_loss.close()
+    save_plot_to_file(folder + "/acc.csv", 'acc', folder + "/acc.png", epochs)
+    save_plot_to_file(folder + "/loss.csv", 'loss', folder + "/loss.png", epochs)
+
+    test_acc, test_loss = test(test_loader, model, criterion, 'TEST', device)
+
+    out_test = open(folder + "/test.txt", "w")
+    out_test.write('Accuracy: {:.6f}, Loss: {:.6f} \n'.format(test_acc, test_loss))
+    out_test.close()
 
     snapshot(model, database, epochs)
 

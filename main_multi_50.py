@@ -9,7 +9,7 @@ from main import snapshot, train, test, save_plot_to_file
 
 
 def main():
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
     seed = 1
 
     torch.manual_seed(seed)
@@ -18,7 +18,7 @@ def main():
 
     epochs = 20
     em_types = ['glove', 'word2vec', 'fasttext']
-    databases = ['MR', 'SST-1', 'SST-2', 'SUBJ', 'TREC']
+    databases = ['IMDB', 'CR']
     optimizers = ['adam', 'adagrad']
     schedules = ['ReduceLROnPlateau', 'StepLR']
 
@@ -39,14 +39,16 @@ def main():
                 os.makedirs(dir)
 
             # Load data
-            train_loader, dev_loader, test_loader, num_class = load_dataset(d, 64, em)
+            if d == 'IMDB':
+                train_loader, dev_loader, test_loader, num_class = load_dataset(d, 16, em)
+            else:
+                train_loader, dev_loader, test_loader, num_class = load_dataset(d, 64, em)
 
             A, B, C, D = 64, 8, 16, 16
             model = capsules(A=A, B=B, C=C, D=D, E=num_class, iters=2).to(device)
 
             for o in optimizers:
                 for s in schedules:
-
                     folder = dir + "/em=" + em + ",o=" + o + ",s=" + s
                     if not os.path.exists(folder):
                         os.makedirs(folder)
@@ -103,7 +105,6 @@ def main():
                     out_test.close()
 
                     snapshot(model, folder, epochs)
-
 
 if __name__ == '__main__':
     main()
