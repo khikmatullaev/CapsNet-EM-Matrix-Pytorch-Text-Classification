@@ -16,7 +16,7 @@ def load_dataset(dataset_name, type, folder = './datasets_prepared'):
         'TREC':6
     }
 
-    params = {'batch_size': 256,
+    params = {'batch_size': 64,
               'drop_last': True,
               'num_workers': 4,
               'pin_memory': True} if torch.cuda.is_available() else {}

@@ -115,9 +115,6 @@ def test(test_loader, model, criterion, device):
 
 
 def main():
-    em_types = ['fasttext', 'glove', 'word2vec']
-    databases = ['CR', 'IMDB2', 'MR', 'SST-1', 'SST-2', 'SUBJ', 'TREC']
-
     em_type = 'glove'
     database = 'MR'
 
@@ -133,14 +130,6 @@ def main():
 
     # Load data
     train_loader, test_loader, num_class = load_dataset(database, em_type)
-
-    #for batch_idx, (data, target) in enumerate(train_loader):
-        # samples will be a 64 x D dimensional tensor
-        # samples will be a 64 x D dimensional tensor
-        # feed it to your neural network model
-        #print(data.shape)
-        #print(target.shape)
-        #break
 
     A, B, C, D = 64, 8, 16, 16
     #A, B, C, D = 32, 32, 32, 32
