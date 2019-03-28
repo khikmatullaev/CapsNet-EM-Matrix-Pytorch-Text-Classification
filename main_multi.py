@@ -1,6 +1,5 @@
 import os
 import torch.optim as optim
-from termcolor import colored
 
 from data_helpers import load_dataset
 from capsules import *
@@ -18,7 +17,7 @@ def main():
 
     epochs = 20
     em_types = ['glove', 'word2vec', 'fasttext']
-    databases = ['MR', 'SST-1', 'SST-2', 'SUBJ', 'TREC']
+    databases = ['CR']
     optimizers = ['adam', 'adagrad']
     schedules = ['ReduceLROnPlateau', 'StepLR']
 
@@ -83,7 +82,7 @@ def main():
                         out_acc.write('{},{},{:.4f}\n'.format(epoch, 'train', train_acc))
                         out_loss.write('{},{},{:.4f}\n'.format(epoch, 'train', train_loss))
 
-                        dev_acc, dev_loss = test(test_loader, model, criterion, 'dev', device)
+                        dev_acc, dev_loss = test(dev_loader, model, criterion, 'dev', device)
 
                         out_acc.write('{},{},{:.4f}\n'.format(epoch, 'dev', dev_acc))
                         out_loss.write('{},{},{:.4f}\n'.format(epoch, 'dev', dev_loss))
