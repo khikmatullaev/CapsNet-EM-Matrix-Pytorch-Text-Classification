@@ -17,7 +17,7 @@ def main():
 
     epochs = 20
     em_types = ['glove', 'word2vec', 'fasttext']
-    databases = ['CR']
+    databases = ["MR", "SST-1", "SST-2", "SUBJ", "TREC", "ProcCons", "IMDB"]
     optimizers = ['adam', 'adagrad']
     schedules = ['ReduceLROnPlateau', 'StepLR']
 

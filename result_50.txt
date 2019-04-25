@@ -1,6 +1,6 @@
 EM glove
 **************************************************
-CR
+ProcCons
 Epoch 1/20
 ------------------------------
 Train Epoch: 1	[64/32112 (0%)]	Accuracy: 65.625000	Loss: 0.039973	Time 0.372 (1.266)	Data 0.000 (0.403)
@@ -10104,7 +10104,7 @@ dev set: Average Accuracy: 76.708528, Loss: 0.531985
 
 TEST set: Average Accuracy: 57.812500, Loss: 0.880559 
 
-saving model to ./multi/CR/em=glove,o=adam,s=ReduceLROnPlateau\model_20.pth
+saving model to ./multi/ProcCons/em=glove,o=adam,s=ReduceLROnPlateau\model_20.pth
 Epoch 1/20
 ------------------------------
 Train Epoch: 1	[64/32112 (0%)]	Accuracy: 89.062500	Loss: 0.047839	Time 0.370 (0.844)	Data 0.000 (0.417)
@@ -20208,7 +20208,7 @@ dev set: Average Accuracy: 76.781542, Loss: 0.555119
 
 TEST set: Average Accuracy: 56.103972, Loss: 0.842212 
 
-saving model to ./multi/CR/em=glove,o=adam,s=StepLR\model_20.pth
+saving model to ./multi/ProcCons/em=glove,o=adam,s=StepLR\model_20.pth
 Epoch 1/20
 ------------------------------
 Train Epoch: 1	[64/32112 (0%)]	Accuracy: 98.437500	Loss: 0.005424	Time 0.619 (1.641)	Data 0.002 (0.537)

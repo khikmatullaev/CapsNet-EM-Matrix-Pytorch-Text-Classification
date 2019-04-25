@@ -8,7 +8,7 @@ def load_dataset(dataset_name, batch_size, type, folder = './datasets_prepared')
 
     dataset_size = {
         "IMDB": 2,
-        "CR": 2,
+        "ProcCons": 2,
         'MR':2,
         'SST-1':5,
         'SST-2':2,

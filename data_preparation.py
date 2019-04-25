@@ -16,7 +16,7 @@ embeddings_index = dict()
 
 dimensions = {
     "IMDB": 52,
-    "CR": 28,
+    "ProcCons": 28,
     'MR': 28,
     'SST-1': 28,
     'SST-2': 28,
@@ -140,7 +140,7 @@ def load_imdb(folder, output, dimension=dimensions['IMDB']):
     print('imdb done')
 
 
-def load_cr(pos, neg, output, dimension=dimensions['CR']):
+def load_pc(pos, neg, output, dimension=dimensions['ProcCons']):
     positive_examples = list(open(pos, encoding='utf-8').readlines())
     positive_examples = [s.strip() for s in positive_examples]
     negative_examples = list(open(neg, encoding='utf-8').readlines())
@@ -354,7 +354,7 @@ def data_prepare(name, input='./datasets', output='./datasets_prepared'):
         load_fasttext('embeddings/wiki-news-300d-1M.vec')
 
     load_imdb(input + '/IMDB/IMDB', output + '/IMDB' + '/' + name)
-    load_cr(input + '/CR/CR/IntegratedPros.txt', input + '/CR/CR/IntegratedCons.txt', output + '/CR' + '/' + name)
+    load_pc(input + '/ProcCons/ProcCons/IntegratedPros.txt', input + '/ProcCons/ProcCons/IntegratedCons.txt', output + '/ProcCons' + '/' + name)
     load_mr(input + '/MR/MR/rt-polarity.pos', input + '/MR/MR/rt-polarity.neg', output + '/MR' + '/' + name)
     load_sst1(input + '/SST-1/train.csv', input + '/SST-1/dev.csv', input + '/SST-1/test.csv', output + '/SST-1' + '/' + name)
     load_sst2(input + '/SST-2/train.csv', input + '/SST-2/dev.csv', input + '/SST-2/test.csv', output + '/SST-2' + '/' + name)
